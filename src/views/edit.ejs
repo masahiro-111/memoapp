@@ -1,0 +1,18 @@
+<%- include( 'components/_header.ejs' ); %>
+<div class="pb-3">
+    <a href='/' class="btn btn-sm btn-outline-primary mx-2">一覧に戻る</a>
+</div>
+<form action="/update/<%= item.id %>" method="post">
+    <div class="form-floating pb-2 mx-2">
+        <input type="text" class="form-control" name="itemTitle" id="title" value="<%= item.title %>">
+        <label for="title">タイトル</label>
+    </div>
+    <div class="form-floating pb-3 mx-2">
+        <textarea class="form-control" style="height: 100px" name="itemText" id="text"><%= item.text %></textarea>
+        <label for="text">内容</label>
+    </div>
+    <input type="submit" value="更新" class="btn btn-lg btn-primary mx-2">
+</form>    
+<%- include( 'components/_footer.ejs' ); %>
+
+

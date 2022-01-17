@@ -1,0 +1,42 @@
+<%- include( 'components/_header.ejs' ); %>
+    <div class="accordion" id="accordionExample">
+        <% items.forEach((item) => { %>
+        <div class="accordion-item pb-2 mx-2">
+            <h2 class="accordion-header" id="heading-<%= item.id %>">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-<%= item.id %>" aria-expanded="true" aria-controls="collapse-<%= item.id %>">
+                    <%= item.title %>
+                </button>
+            </h2>
+            <div id="collapse-<%= item.id %>" class="accordion-collapse collapse" aria-labelledby="heading-<%= item.id %>" data-bs-parent="#accordionExample">
+                <div class="accordion-body">
+                    <%= item.text %><br>
+                    <div class="pt-2">
+                        <a href='/edit/<%= item.id %>' class="btn btn-sm btn-primary">編集</a>
+                        <!-- 削除ボタン+確認モーダル -->
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal-<%= item.id %>">削除</button>
+                        <div class="modal fade" id="deleteModal-<%= item.id %>" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel">削除しますか？</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p><label>タイトル：</label><b><%= item.title %></b></p>
+                                        <%= item.text.substr(0, 1000) + ' ...' %>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                                        <a href='/delete/<%= item.id %>' class="btn btn-danger">削除</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 削除ボタン+確認モーダル -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% }) %>
+    </div>
+<%- include( 'components/_footer.ejs' ); %>
