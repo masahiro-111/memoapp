@@ -5,7 +5,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+// var usersRouter = require('./routes/users');
 
 var app = express();
 
@@ -22,7 +22,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // app.use(express.static('public'));//静的配信のフォルダを指定
 
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+// app.use('/users', usersRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -39,27 +39,5 @@ app.use(function(err, req, res, next) {
     res.status(err.status || 500);
     res.render('error');
 });
-
-// //hello-world
-// app.get("/", (req,res) => {
-//     res.send("Hello World");
-// });
-
-// /* ============ここからcreate============ */
-// //新規作成画面のルーティング
-// app.get('/new', (req, res) => {
-//     res.render('new.ejs');
-// });
-// //新規作成アクション
-// app.post('/create', (req, res) => {
-// connection.query(
-//     'INSERT INTO items (title, text) VALUES (?, ?)',
-//     [req.body.itemTitle, req.body.itemText],
-//     (error, results) => {
-//     res.redirect('/')//methodがpostのときはredirectを使う
-//     }
-// );
-// });
-// /* ============ここまでcreate============ */
 
 module.exports = app;

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>memoPad</title>
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+        <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+            <symbol id="check-circle-fill" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+            </symbol>
+            <symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+            </symbol>
+        </svg>
+    </head>
+    <body>
+        <div id="new">
+            <!-- ナビゲーションバー（navbar） -->
+            <nav class="navbar navbar-dark bg-primary mb-3">
+                <div class="container-fluid">
+                    <span class="navbar-brand mb-0 h1 fw-light">メモ帳</span>
+                    <button style='text-decoration: none;'  class="btn btn-light"  @click="newClick">新規追加</button>
+                </div>
+            </nav>
+            <!-- アラート（alert） -->
+            <template v-if="successAlert"><!-- 成功時 -->
+                <div class="alert alert-success d-flex align-items-center mx-2" role="alert">
+                    <svg class="bi flex-shrink-0 me-2" width="24" height="24"><use xlink:href="#check-circle-fill"/></svg>
+                    <div>更新が完了しました。</div>
+                </div>
+            </template>
+            <template v-if="errorAlert"><!-- 失敗時 -->
+                <div class="alert alert-danger d-flex align-items-center mx-2" role="alert">
+                    <svg class="bi flex-shrink-0 me-2" width="24" height="24"><use xlink:href="#exclamation-triangle-fill"/></svg>
+                    <div>更新に失敗しました。再度お試しください。</div>
+                </div>
+            </template>
+            <!-- 新規追加フォーム -->
+            <template v-if="newShow">
+                <div class="form-floating pb-2 mx-2">
+                    <input type="text" class="form-control" name="itemTitle" id="newTitle" maxlength="100">
+                    <label for="title">タイトル</label>
+                </div>
+                <div class="form-floating pb-2 mx-2">
+                    <textarea class="form-control" name="itemText" id="newText" style="height: 300px;" maxlength="30000"></textarea>
+                    <label for="text">内容</label>
+                </div>
+                <div class="form-floating pb-3 mx-2 border-bottom">
+                    <button class="btn btn-primary" @click="addSend">追加</button>
+                    <button style='text-decoration: none; float: right;'  class="btn btn-danger" @click="cancelClick">キャンセル</button>
+                </div>
+                <div class="form-floating pb-3 mx-2"></div>
+            </template> 
+        </div>
+        <!-- メモ一覧 -->
+        <div id="list">
+            <!-- メモの登録がない場合に表示するメッセージ -->
+            <div v-if="!items.length" id="noMemo">
+                <h1 class="text-center fw-light">メモが登録されていません。</h1><br>
+                <h2 class="text-center fw-light">右上の新規追加ボタンから登録してください。</h2>
+            </div>
+            <!--  各メモ毎の表示（アコーディオン） -->
+            <div class="accordion" id="accordionList">
+                <div class="accordion-item pb-2 mx-2" v-for="item in items" :key="item.id" v-bind:id="'memoID-' + item.id ">
+                    <h2 class="accordion-header" v-bind:id="'heading-' + item.id ">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" v-bind:data-bs-target="'#collapse-' + item.id" aria-expanded="true" v-bind:aria-controls="'collapse-' + item.id" v-bind:id="'memoTitle-' + item.id ">{{ item.title }}</button>
+                    </h2>
+                    <div v-bind:id="'collapse-' + item.id" class="accordion-collapse collapse" v-bind:aria-labelledby="'heading-' + item.id" data-bs-parent="#accordionList">
+                        <div v-bind:id="'memoView' + item.id">
+                            <div class="accordion-body">
+                                <div v-bind:id="'memoText-' + item.id " style="white-space: pre-wrap;">{{ item.text }}</div><br>
+                                <div class="pt-2">
+                                    <button class="btn btn-sm btn-primary" @click="editClick(item.id)" style='width: 75px;' >編集</button>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" v-bind:data-bs-target="'#deleteModal-' + item.id " style='float: right; width: 75px;' >削除</button>
+                                    <!-- 削除確認モーダルウィンドウ -->
+                                    <div class="modal fade" v-bind:id="'deleteModal-' + item.id" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="deleteModalLabel">このメモを削除してもよろしいですか？</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                <p><label>タイトル：</label><b>{{ item.title }}</b></p>
+                                                    {{ item.text.length <= 500 ? item.text : item.text.substr(0, 500) + ' ...' }}
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                                                    <button type="button" class="btn btn-danger" @click="deleteSend(item.id)" data-bs-dismiss="modal">削除</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="pt-2">
+                                    <span class='badge rounded-pill bg-secondary'>登録：{{ item.createdAt.substr( 0, 10 ) + ' ' + item.createdAt.substr( -13,8 ) }}</span><!-- 登録日 -->
+                                    <span class='badge rounded-pill bg-secondary'>変更：{{ item.updatedAt.substr( 0, 10 ) + ' ' + item.updatedAt.substr( -13,8 ) }}</span><!-- 更新日 -->
+                                </div>
+                            </div>
+                        </div>
+                        <!--  編集モード -->
+                        <div v-bind:id="'memoEdit' + item.id" style='display: none;'>
+                            <div class="form-floating mt-2 pb-2 mx-2">
+                                <input type="text" class="form-control" name="itemTitle" v-bind:id="'editTitle-' + item.id" v-bind:value="item.title" maxlength="100">
+                                <label for="title">タイトル</label>
+                            </div>
+                            <div class="form-floating pb-3 mx-2">
+                                <textarea class="form-control edit-text" style="height: 300px;" name="itemText" v-bind:id="'editText-' + item.id" maxlength="30000" @keyup="remaining(item.id)" >{{ item.text }}</textarea>
+                                <label for="text">内容</label>
+                            </div>
+                            <div class="form-floating pb-3 mx-2">
+                                <button type="button" style='text-decoration: none; width: 75px;'  class="btn btn-sm btn-primary" @click="editSend(item.id)" >更新</button>
+                                <div v-bind:id="'remainingText-' + item.id" style="display: inline-block;"></div>
+                                <button type="button" style='text-decoration: none; float: right; width: 75px;' class="btn btn-sm btn-danger" @click="cancelClick(item.id)" >キャンセル</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- フッター -->
+        <footer class="footer mx-2" style="position: absolute; bottom: 6px; width: 98%;" id="select">
+            <select class="form-select form-select-sm" v-model="sortSelected" @change="sortReadItems">
+                <option disabled value="">並び順</option>
+                <option v-for="info in infoList" :value="info.value">{{ info.label }}</option>
+            </select>
+        </footer>
+    </body>
+</html>
+<script>
+//アラート、新規追加部分
+let newAdd = new Vue(
+    {
+        el: '#new',
+        data: {
+            newShow: false, 
+            successAlert: false,
+            errorAlert: false
+        },
+        methods: {
+            //新規追加ボタンクリック
+            newClick: function () {
+                this.newShow = true;
+                let noMemoShow = document.getElementById("noMemo");
+                if(noMemoShow) {
+                    noMemoShow.style.display ="none";
+                }
+            },
+            //キャンセルボタンクリック
+            cancelClick: function () {
+                this.newShow = false;
+                let noMemoShow = document.getElementById("noMemo");
+                if (!listRead.items.length) {
+                    noMemoShow.style.display ="";
+                }
+            },
+            //新規登録処理（追加ボタンクリック）
+            addSend () {
+                let newTitle = document.getElementById("newTitle").value;
+                let newText = document.getElementById("newText").value;
+
+                let sendData = new URLSearchParams();
+                sendData.append('itemTitle', newTitle);
+                sendData.append('itemText', newText);
+
+                axios.post('create/', sendData)
+                .then((res) => {
+                    listRead.readItems();
+                    this.newShow = false;
+                    this.successAlert = true;
+                    let alertClose = setTimeout( this.successAlertStop , 3000 );
+                })
+                .catch((err) => {
+                    console.log(err)
+                    this.errorAlert = true;
+                    let alertClose = setTimeout( this.errorAlertStop , 3000 );
+                })
+            },
+            //成功アラート
+            successAlertStop() {
+                this.successAlert = false;
+            },
+            //失敗アラート
+            errorAlertStop() {
+                this.errorAlert = false;
+            }
+
+        }
+    }
+);
+//メモ一覧部分
+let listRead = new Vue({
+    el: '#list',
+    data: {
+        items: [],
+        id: '',
+        title: '',
+        text: '',
+        textMaxLength: 30000
+    },
+    methods: {
+        //メモ一覧取得
+        readItems () {
+            axios.get('read/')
+            .then(res => {
+                this.items = res.data
+            })
+            .catch(err => {
+                console.log(err);
+                newAdd.errorAlert = true;
+                let alertClose = setTimeout( newAdd.errorAlertStop , 3000 );
+            });
+        },
+        //編集ボタンクリック
+        editClick(id) {
+            let memoView = document.getElementById("memoView" + id);
+            memoView.style.display ="none";
+            let memoEdit = document.getElementById("memoEdit" + id);
+            memoEdit.style.display ="";
+        },
+        //編集モード終了
+        editClose (id) {
+            let memoView = document.getElementById("memoView" + id);
+            memoView.style.display ="";
+            let memoEdit = document.getElementById("memoEdit" + id);
+            memoEdit.style.display ="none";
+            document.getElementById("remainingText-" + id).innerHTML = '';
+        },
+        //（編集）キャンセルボタンクリック
+        cancelClick (id) {
+            let editTitle = document.getElementById("editTitle-" + id);
+            let editText = document.getElementById("editText-" + id);
+            let memoTitle = document.getElementById("memoTitle-" + id);
+            let memoText = document.getElementById("memoText-" + id);
+
+            editTitle.value = memoTitle.innerHTML;
+            editText.value = memoText.innerHTML;
+            this.editClose(id);
+        },
+        //編集ボタンクリック
+        editSend (id) {
+            let editTitle = document.getElementById("editTitle-" + id).value;
+            let editText = document.getElementById("editText-" + id).value;
+
+            let sendData = new URLSearchParams();
+            sendData.append('itemTitle', editTitle);
+            sendData.append('itemText', editText);
+
+            axios.put('update/' + id, sendData)
+            .then(res => {
+                this.readItems();
+                this.editClose(id);
+                newAdd.successAlert = true;
+                let alertClose = setTimeout( newAdd.successAlertStop , 3000 );
+            })
+            .catch(err => {
+                console.log(err);
+                newAdd.errorAlert = true;
+                let alertClose = setTimeout( newAdd.errorAlertStop , 3000 );
+            });
+        },
+        //削除処理（削除ボタンクリック）
+        deleteSend (id) {
+            axios.get('delete/' + id)
+            .then(res => {
+                this.readItems();
+                newAdd.successAlert = true;
+                let alertClose = setTimeout( newAdd.successAlertStop , 3000 );
+            })
+            .catch(err => {
+                console.log(err);
+                newAdd.errorAlert = true;
+                let alertClose = setTimeout( newAdd.errorAlertStop , 3000 );
+            });
+        },
+        //残り文字数チェック
+        remaining: function(id){
+            let editText = document.getElementById("editText-" + id).value;
+            if ( editText.length < this.textMaxLength) {
+                document.getElementById("remainingText-" + id).innerHTML = '<span>残り' + ( this.textMaxLength - editText.length ) + '文字</span>';
+            } else {
+                document.getElementById("remainingText-" + id).innerHTML = '<span style="color: red;">残り' + ( this.textMaxLength - editText.length ) + '文字</span>';
+            }
+        }
+
+    },
+    created () {
+        this.readItems();
+    },
+
+});
+//並び替え選択部分
+let shortSelect = new Vue({
+    el: '#select',
+    data: {
+        sortSelected: '',
+        infoList: [
+            {value: '1', label: '登録が新しい順', where: 'createdAt',  orderby: 'DESC' },
+            {value: '2', label: '登録が古い順',    where: 'createdAt',  orderby: 'ASC'   },
+            {value: '3', label: '更新が新しい順', where: 'updatedAt', orderby: 'DESC' },
+            {value: '4', label: '更新が古い順',    where: 'updatedAt', orderby: 'ASC'   },
+        ]
+    },
+    methods: {
+        sortReadItems () {
+            let index = this.sortSelected - 1;
+            let whereVal = this.infoList[index].where;
+            let orderVal = this.infoList[index].orderby;
+            axios.get('sort_read/' + whereVal + '/' + orderVal)
+            .then(res => {
+                listRead.items = res.data
+            })
+            .catch(err => {
+                console.log(err)
+                newAdd.errorAlert = true;
+                let alertClose = setTimeout( newAdd.errorAlertStop , 3000 );
+            });
+        },
+
+    }
+
+});
+</script>
